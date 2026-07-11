@@ -51,6 +51,8 @@ Under **Enable extra low-level configuration options**, enable:
 
 Only for the **Octopus** MagXY step/dir outputs.
 
+Menuconfig (Octopus): STM32H723, 128KiB bootloader, **25 MHz crystal**, USB. Default leave relax **disabled** (D15).
+
 ### Homing behavior (D7)
 
 If `[magneto_load_cell]` is loaded and the probe is already triggered before the move:
