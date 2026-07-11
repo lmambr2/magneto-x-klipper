@@ -6,9 +6,19 @@ This is a **community / personal fork**. Magneto-specific extras live on branch 
 
 - Project umbrella (configs, host tooling, docs): [lmambr2/magneto-x](https://github.com/lmambr2/magneto-x)
 - In-tree notes: [docs/Magneto_X.md](docs/Magneto_X.md)
+- Upstream sync: [docs/UPSTREAM_SYNC.md](docs/UPSTREAM_SYNC.md) — run `python3 scripts/magneto_guard.py` after every merge
 - **Do not open PRs against [Klipper3d/klipper](https://github.com/Klipper3d/klipper) for Magneto patches.**
 
 Not affiliated with Peopoly. Stock Peopoly Klipper is based on a 2023-05-25 (v0.11-era) tree; this fork tracks current Klipper and re-applies only the minimum Magneto hardware support.
+
+### Protecting Magneto changes
+
+```bash
+python3 scripts/magneto_guard.py          # fails if Magneto files/markers missing
+python3 -m unittest discover -s tests/magneto -v
+```
+
+CI workflow: `.github/workflows/magneto-ci.yml`.
 
 ---
 

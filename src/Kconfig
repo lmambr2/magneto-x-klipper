@@ -313,7 +313,8 @@ config WANT_STEPPER_OPTIMIZED_BOTH_EDGE
         take a step only on the "rising" or "falling" level of the
         step pin).
 
-# Magneto X / MagXY linear-motor compatibility (vendor fork feature)
+# MAGNETO-X-BEGIN kconfig-relax-stepper-past
+# Magneto X / MagXY linear-motor compatibility (do not drop on upstream merge)
 config MAGNETO_RELAX_STEPPER_PAST
     bool "Magneto X: relax 'Stepper too far in past' shutdown"
     depends on LOW_LEVEL_OPTIONS
@@ -324,6 +325,7 @@ config MAGNETO_RELAX_STEPPER_PAST
         shuts down when a step is scheduled more than 1ms in the past can
         trip spuriously on that hardware. Enable only on Magneto X Octopus
         builds. See docs/Magneto_X.md.
+# MAGNETO-X-END kconfig-relax-stepper-past
 
 # Support setting gpio state at startup
 config INITIAL_PINS

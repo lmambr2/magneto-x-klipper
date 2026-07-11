@@ -331,10 +331,12 @@ class PrinterHoming:
                     "Probing failed due to printer shutdown")
             raise
         if check_movement and hmove.check_no_movement() is not None:
+            # MAGNETO-X-BEGIN sticky-probe soft-fail
             # Magneto X: stock load-cell front-end can remain latched high
             # until CLEAR_LOAD_CELL / LC28 is issued. Prefer clearing the
             # latch before probing; if the module is present, log instead of
             # hard-failing so a single sticky sample does not abort Z home.
+            # (Do not remove this block when merging upstream Klipper.)
             if self.printer.lookup_object('magneto_load_cell', None) is not None:
                 self.gcode.respond_info(
                     "Probe triggered prior to movement "
@@ -343,6 +345,7 @@ class PrinterHoming:
             else:
                 raise self.printer.command_error(
                     "Probe triggered prior to movement")
+            # MAGNETO-X-END sticky-probe soft-fail
         return epos
     def cmd_G28(self, gcmd):
         # Move to origin

@@ -1,0 +1,91 @@
+{
+  "name": "magneto-x-klipper",
+  "description": "Magneto-specific assets that must survive upstream Klipper syncs",
+  "branch": "magneto-x",
+  "policy": [
+    "owned files are Magneto-only additions; never delete on merge",
+    "patched files contain MAGNETO-X-BEGIN/END markers; re-apply if upstream conflicts drop them",
+    "run: python3 scripts/magneto_guard.py before and after every upstream merge/rebase"
+  ],
+  "owned_files": [
+    {
+      "path": "klippy/extras/magneto_load_cell.py",
+      "role": "STC8051/CS1237 digital load-cell latch reset",
+      "must_contain": [
+        "class MagnetoLoadCell",
+        "CLEAR_LOAD_CELL",
+        "def clear_load_cell",
+        "load_config"
+      ]
+    },
+    {
+      "path": "klippy/extras/gcode_shell_command.py",
+      "role": "RUN_SHELL_COMMAND for MagXY ENABLE/DISABLE via magneto-manager",
+      "must_contain": [
+        "class ShellCommand",
+        "RUN_SHELL_COMMAND",
+        "load_config_prefix"
+      ]
+    },
+    {
+      "path": "docs/Magneto_X.md",
+      "role": "in-tree Magneto documentation",
+      "must_contain": [
+        "magneto_load_cell",
+        "MAGNETO_RELAX_STEPPER_PAST"
+      ]
+    },
+    {
+      "path": "magneto/MANIFEST.json",
+      "role": "this manifest",
+      "must_contain": ["owned_files", "patched_files"]
+    },
+    {
+      "path": "scripts/magneto_guard.py",
+      "role": "CI/local guard for Magneto assets",
+      "must_contain": ["MAGNETO-X-BEGIN", "check_manifest"]
+    }
+  ],
+  "patched_files": [
+    {
+      "path": "klippy/extras/homing.py",
+      "role": "sticky probe soft-fail when magneto_load_cell present",
+      "markers": [
+        "MAGNETO-X-BEGIN sticky-probe soft-fail",
+        "MAGNETO-X-END sticky-probe soft-fail"
+      ],
+      "must_contain": [
+        "magneto_load_cell",
+        "Probe triggered prior to movement"
+      ]
+    },
+    {
+      "path": "src/stepper.c",
+      "role": "optional MagXY stepper-past relaxation",
+      "markers": [
+        "MAGNETO-X-BEGIN relax-stepper-past",
+        "MAGNETO-X-END relax-stepper-past"
+      ],
+      "must_contain": [
+        "CONFIG_MAGNETO_RELAX_STEPPER_PAST",
+        "Stepper too far in past"
+      ]
+    },
+    {
+      "path": "src/Kconfig",
+      "role": "menuconfig option MAGNETO_RELAX_STEPPER_PAST",
+      "markers": [
+        "MAGNETO-X-BEGIN kconfig-relax-stepper-past",
+        "MAGNETO-X-END kconfig-relax-stepper-past"
+      ],
+      "must_contain": [
+        "config MAGNETO_RELAX_STEPPER_PAST"
+      ]
+    }
+  ],
+  "upstream_conflict_hotspots": [
+    "klippy/extras/homing.py probing_move()",
+    "src/stepper.c stepper_load_next / too far in past",
+    "src/Kconfig near INITIAL_PINS / stepper options"
+  ]
+}

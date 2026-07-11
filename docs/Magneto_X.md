@@ -64,3 +64,15 @@ If `[magneto_load_cell]` is loaded, a “Probe triggered prior to movement” co
 ## External services
 
 Linear motors are armed via Peopoly’s ESP32 bridge + `magneto-manager` HTTP API, not pure Klipper. See the parent workspace `docs/OS_IMAGE.md`.
+
+## Surviving upstream syncs
+
+Magneto assets are listed in [`magneto/MANIFEST.json`](../magneto/MANIFEST.json).
+Patched upstream regions use `MAGNETO-X-BEGIN` / `MAGNETO-X-END` markers.
+
+```bash
+python3 scripts/magneto_guard.py
+python3 -m unittest discover -s tests/magneto -v
+```
+
+See [UPSTREAM_SYNC.md](UPSTREAM_SYNC.md) for the merge/rebase procedure.
