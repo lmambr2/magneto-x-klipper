@@ -1,24 +1,13 @@
-# Magneto X support in this tree
+# Magneto X support in this Klipper tree
 
-Repo: **magneto-x-klipper**  
-This file is on branch **`magneto-x-kalico`** (Kalico base).  
-Sibling track: branch **`magneto-x`** (mainline Klipper3d base).
-
+Repo: **magneto-x-klipper** (branch **`magneto-x-kalico`**, Kalico track).  
+Sibling track: branch **`magneto-x`** (mainline Klipper3d) — see [TRACKS.md](TRACKS.md).  
 Umbrella project: [magneto-x](https://github.com/lmambr2/magneto-x) (configs, host OS, research).
 
 This tree is a **community/personal fork** for the Peopoly Magneto X.  
 **Do not submit these changes to upstream Klipper3d or KalicoCrew/kalico.**
 
-## Tracks (A/B)
-
-| Branch | Base | Default? | See |
-|--------|------|----------|-----|
-| **`magneto-x`** | [Klipper3d/klipper](https://github.com/Klipper3d/klipper) | **Yes** (recommended first) | [TRACKS.md](TRACKS.md) |
-| **`magneto-x-kalico`** | [KalicoCrew/kalico](https://github.com/KalicoCrew/kalico) | Optional A/B | [TRACKS.md](TRACKS.md) |
-
-Same Magneto hardware extras on both. Switch base only after backups; flash MCUs from the tree you run.
-
-## Peopoly base (archaeology)
+## Peopoly base
 
 Peopoly’s repo `mypeopoly/Klipper`, branch `magneto-x`, was based on upstream commit:
 
@@ -45,8 +34,7 @@ This is **not** the same as upstream `[load_cell]` / `[load_cell_probe]` (those 
 
 ### `[gcode_shell_command]`
 
-**On this Kalico track**, shell commands ship with Kalico (see [Kalico additions](https://docs.kalico.gg/Kalico_Additions.html)).  
-Still required for MagXY arm/disarm via magneto-manager:
+Arksine’s shell helper (**native on this Kalico track**; vendored on `magneto-x` mainline). Required for MagXY:
 
 ```ini
 [gcode_shell_command LINEAR_MOTOR_ENABLE]
@@ -54,8 +42,6 @@ command: curl -sG http://127.0.0.1:8880/send_command --data-urlencode command=EN
 timeout: 3.
 verbose: False
 ```
-
-(On the mainline `magneto-x` branch the same module is vendored in-tree because Klipper3d does not ship it.)
 
 ### MCU option `MAGNETO_RELAX_STEPPER_PAST`
 
@@ -65,9 +51,19 @@ Under **Enable extra low-level configuration options**, enable:
 
 Only for the **Octopus** MagXY step/dir outputs.
 
-### Homing behavior
+### Homing behavior (D7)
 
-If `[magneto_load_cell]` is loaded, a “Probe triggered prior to movement” condition logs a warning instead of aborting. Prefer clearing the latch (`CLEAR_LOAD_CELL`) before Z home.
+If `[magneto_load_cell]` is loaded and the probe is already triggered before the move:
+
+1. Clear the load-cell latch (`clear_load_cell` / dwell)
+2. Retry the probe move **once**
+3. If still sticky → hard error
+
+Prefer clearing the latch (`CLEAR_LOAD_CELL` / `LC28`) before Z home. `CLEAR_LOAD_CELL` **dwells** for the full pulse window (PR-K2).
+
+### Shell PARAMS (PR-K5)
+
+`[gcode_shell_command]` rejects non-empty `PARAMS` by default (`allow_params: False`). MagXY curls must be fixed command lines only.
 
 ## Recommended MCU configs
 
@@ -76,23 +72,13 @@ If `[magneto_load_cell]` is loaded, a “Probe triggered prior to movement” co
 | Octopus Pro H723 USB | + `MAGNETO_RELAX_STEPPER_PAST` |
 | Lancer RP2040 CAN | Stock Linux Hub CAN is **250000** (not 1 Mbit); no stepper-past option needed |
 
-## Kalico-only extras (optional)
-
-Useful on this track only (see [docs.kalico.gg](https://docs.kalico.gg/Kalico_Additions.html)):
-
-- `[danger_options]` — e.g. multi-MCU trsync timeout tuning (Schmudus path)
-- MPC / velocity PID / PID profiles
-- Built-in shell, dockable probe helpers, macro QoL
-
-These are **not** required for first Magneto motion. Prefer leaving danger options off until the machine homes and prints on stock-like settings.
-
 ## External services
 
-Linear motors are armed via Peopoly’s ESP32 bridge + `magneto-manager` HTTP API, not pure Klipper/Kalico. See the umbrella `docs/OS_IMAGE.md`.
+Linear motors are armed via Peopoly’s ESP32 bridge + `magneto-manager` HTTP API, not pure Klipper. See the parent workspace `docs/OS_IMAGE.md`.
 
 ## Surviving upstream syncs
 
-Magneto assets are listed in [`magneto/MANIFEST.json`](../magneto/MANIFEST.json).  
+Magneto assets are listed in [`magneto/MANIFEST.json`](../magneto/MANIFEST.json).
 Patched upstream regions use `MAGNETO-X-BEGIN` / `MAGNETO-X-END` markers.
 
 ```bash
@@ -100,4 +86,4 @@ python3 scripts/magneto_guard.py
 python3 -m unittest discover -s tests/magneto -v
 ```
 
-See [UPSTREAM_SYNC.md](UPSTREAM_SYNC.md) for the merge/rebase procedure (Kalico remote).
+See [UPSTREAM_SYNC.md](UPSTREAM_SYNC.md) for the merge/rebase procedure.

@@ -20,6 +20,8 @@ class ShellCommand:
         self.command = shlex.split(cmd)
         self.timeout = config.getfloat("timeout", 2.0, above=0.0)
         self.verbose = config.getboolean("verbose", True)
+        # Magneto PR-K5: reject PARAMS by default
+        self.allow_params = config.getboolean("allow_params", False)
         self.proc_fd = None
         self.partial_output = ""
         self.gcode.register_mux_command(
@@ -52,8 +54,17 @@ class ShellCommand:
     cmd_RUN_SHELL_COMMAND_help = "Run a linux shell command"
 
     def cmd_RUN_SHELL_COMMAND(self, params):
-        gcode_params = params.get("PARAMS", "")
-        gcode_params = shlex.split(gcode_params)
+        raw_params = params.get("PARAMS", None)
+        if raw_params not in (None, ""):
+            if not self.allow_params:
+                raise self.gcode.error(
+                    "PARAMS not allowed for shell command {%s} "
+                    "(set allow_params: True only if you trust all gcode)"
+                    % (self.name,)
+                )
+            gcode_params = shlex.split(raw_params)
+        else:
+            gcode_params = []
         reactor = self.printer.get_reactor()
         try:
             proc = subprocess.Popen(
