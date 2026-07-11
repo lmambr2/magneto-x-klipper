@@ -30,7 +30,8 @@
       "must_contain": [
         "class MagnetoLinearMotor",
         "MAGNETO_LINEAR_ENABLE",
-        "ALLOWED_SERIAL_CMDS",
+        "ALLOWED_CMDS",
+        "allow_remote_manager",
         "load_config"
       ]
     },

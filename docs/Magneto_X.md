@@ -90,6 +90,26 @@ python3 -m unittest discover -s tests/magneto -v
 
 See [UPSTREAM_SYNC.md](UPSTREAM_SYNC.md) for the merge/rebase procedure.
 
-### `[magneto_linear_motor]` (PR-K7)
+### `[magneto_linear_motor]` (PR-K7) — preferred MagXY path
 
-See mainline Magneto_X.md — backend http/serial, ENABLE/DISABLE only.
+Native ENABLE/DISABLE (no shell). Default backend talks to hardened manager.
+
+```ini
+[magneto_linear_motor]
+backend: http
+manager_url: http://127.0.0.1:8880
+enable_dwell: 0.5
+register_lm_aliases: True
+# allow_remote_manager: False   # refuse non-localhost manager_url
+# backend: serial               # exclusive: stop magneto-manager first
+# serial_match: USB Serial
+```
+
+| G-code | Action |
+|--------|--------|
+| `LM_ENABLE` / `MAGNETO_LINEAR_ENABLE` / `_LM_ENABLE` | ENABLE (+ optional dwell) |
+| `LM_DISABLE` / `MAGNETO_LINEAR_DISABLE` / `_LM_DISABLE` | DISABLE |
+| `MAGNETO_LINEAR_STATUS` | Backend, enable state, manager health |
+| `MAGNETO_LINEAR_VERSION` | Manager version or serial VERSION |
+
+Only **ENABLE / DISABLE / VERSION**. Shell MagXY curls are optional legacy only.
