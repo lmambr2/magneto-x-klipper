@@ -33,33 +33,31 @@ G-codes: `CLEAR_LOAD_CELL` / `LC28`, `LL28`, `LH28`.
 This is **not** the same as upstream `[load_cell]` / `[load_cell_probe]` (those need a direct ADC).
 
 
-### `[magneto_linear_motor]` (PR-K7)
+### `[magneto_linear_motor]` (PR-K7) — preferred MagXY path
 
-Native MagXY enable/disable — preferred over `gcode_shell_command` + curl.
+Native ENABLE/DISABLE (no shell). Default backend talks to hardened manager.
 
 ```ini
 [magneto_linear_motor]
 backend: http
 manager_url: http://127.0.0.1:8880
-# backend: serial
-# serial_port: /dev/ttyUSB0
-# baud: 115200
+enable_dwell: 0.5
 register_lm_aliases: True
+# allow_remote_manager: False   # refuse non-localhost manager_url
+# backend: serial               # exclusive: stop magneto-manager first
+# serial_match: USB Serial
 ```
 
 | G-code | Action |
 |--------|--------|
-| `MAGNETO_LINEAR_ENABLE` / `LM_ENABLE` | Send ENABLE |
-| `MAGNETO_LINEAR_DISABLE` / `LM_DISABLE` | Send DISABLE |
-| `MAGNETO_LINEAR_STATUS` | Backend + last state |
-| `MAGNETO_LINEAR_VERSION` | Manager `/get_os_version` or serial VERSION |
+| `LM_ENABLE` / `MAGNETO_LINEAR_ENABLE` / `_LM_ENABLE` | ENABLE (+ optional dwell) |
+| `LM_DISABLE` / `MAGNETO_LINEAR_DISABLE` / `_LM_DISABLE` | DISABLE |
+| `MAGNETO_LINEAR_STATUS` | Backend, enable state, manager health |
+| `MAGNETO_LINEAR_VERSION` | Manager version or serial VERSION |
 
-**http** (default): talks to hardened magneto-manager (manager owns CH340).  
-**serial**: direct ESP32; stop magneto-manager first so the port is free.
+Only **ENABLE / DISABLE / VERSION**. Shell MagXY curls are optional legacy only.
 
-Only ENABLE/DISABLE/VERSION — no arbitrary serial from gcode.
-
-### `[gcode_shell_command]`
+### `[gcode_shell_command]` (optional; not required for MagXY)
 
 Arksine’s shell helper (**vendored** on this mainline track; **native** on `magneto-x-kalico`). Required for MagXY:
 

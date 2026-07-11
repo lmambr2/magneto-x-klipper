@@ -20,11 +20,12 @@
     },
     {
       "path": "klippy/extras/magneto_linear_motor.py",
-      "role": "Native MagXY ENABLE/DISABLE (PR-K7); http or serial backend",
+      "role": "Native MagXY ENABLE/DISABLE (PR-K7); http default, serial optional",
       "must_contain": [
         "class MagnetoLinearMotor",
         "MAGNETO_LINEAR_ENABLE",
-        "ALLOWED_SERIAL_CMDS",
+        "ALLOWED_CMDS",
+        "allow_remote_manager",
         "load_config"
       ]
     },

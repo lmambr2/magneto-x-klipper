@@ -1,31 +1,31 @@
 # Magneto X MagXY linear-motor enable/disable (PR-K7)
 #
-# Replaces gcode_shell_command + curl for MagXY arm/disarm. Only fixed
-# ENABLE / DISABLE (and optional VERSION) — no arbitrary serial strings
-# from gcode.
+# Preferred path for MagXY arm/disarm (replaces gcode_shell_command + curl).
+# Only fixed ENABLE / DISABLE (and optional VERSION) — no arbitrary serial
+# strings from gcode.
 #
 # Backends:
-#   http   — hardened magneto-manager at 127.0.0.1:8880 (default; safe when
-#            manager already owns the CH340 serial port)
-#   serial — direct pyserial to ESP32 ("USB Serial" @ 115200); do not run
-#            magneto-manager against the same port at the same time
+#   http   — hardened magneto-manager (default). Manager owns CH340 serial.
+#   serial — direct pyserial to ESP32; stop magneto-manager first.
 #
 # Copyright (C) 2026  Magneto-X modernization
 # This file may be distributed under the terms of the GNU GPLv3 license.
 
 from __future__ import annotations
 
+import json
 import logging
 import urllib.error
 import urllib.parse
 import urllib.request
 
-ALLOWED_SERIAL_CMDS = frozenset({"ENABLE", "DISABLE", "VERSION"})
+ALLOWED_CMDS = frozenset({"ENABLE", "DISABLE", "VERSION"})
 
 
 class MagnetoLinearMotor:
     def __init__(self, config):
         self.printer = config.get_printer()
+        self.name = config.get_name().split()[-1]
         self.gcode = self.printer.lookup_object("gcode")
         self.backend = config.getchoice(
             "backend", {"http": "http", "serial": "serial"}, "http"
@@ -34,16 +34,22 @@ class MagnetoLinearMotor:
         self.manager_url = config.get(
             "manager_url", "http://127.0.0.1:8880"
         ).rstrip("/")
+        self.allow_remote_manager = config.getboolean(
+            "allow_remote_manager", False
+        )
         self.serial_port = config.get("serial_port", "")
         self.baud = config.getint("baud", 115200, minval=9600, maxval=921600)
         self.serial_match = config.get("serial_match", "USB Serial")
-        # Stock macros used G4 P500 before enable — optional dwell here
         self.enable_dwell = config.getfloat(
             "enable_dwell", 0.5, minval=0.0, maxval=5.0
         )
         self._ser = None
         self._last_error = None
-        self._enabled = None  # unknown until first command
+        self._enabled = None
+        self._last_port = None
+
+        if self.backend == "http":
+            self._check_manager_url_local(config)
 
         self.gcode.register_command(
             "MAGNETO_LINEAR_ENABLE",
@@ -65,7 +71,6 @@ class MagnetoLinearMotor:
             self.cmd_VERSION,
             desc=self.cmd_VERSION_help,
         )
-        # Optional short aliases used by stock macros / panels
         if config.getboolean("register_lm_aliases", True):
             self.gcode.register_command(
                 "LM_ENABLE", self.cmd_ENABLE, desc=self.cmd_ENABLE_help
@@ -73,27 +78,54 @@ class MagnetoLinearMotor:
             self.gcode.register_command(
                 "LM_DISABLE", self.cmd_DISABLE, desc=self.cmd_DISABLE_help
             )
+            # Stock internal names still used by some panel macros
+            self.gcode.register_command(
+                "_LM_ENABLE", self.cmd_ENABLE, desc=self.cmd_ENABLE_help
+            )
+            self.gcode.register_command(
+                "_LM_DISABLE", self.cmd_DISABLE, desc=self.cmd_DISABLE_help
+            )
 
+        self.printer.add_object("magneto_linear_motor", self)
         logging.info(
-            "magneto_linear_motor: backend=%s manager=%s",
+            "magneto_linear_motor: backend=%s url_or_port=%s",
             self.backend,
-            self.manager_url if self.backend == "http" else self.serial_port,
+            self.manager_url if self.backend == "http" else (
+                self.serial_port or "auto:%s" % (self.serial_match,)
+            ),
         )
+
+    def _check_manager_url_local(self, config):
+        if self.allow_remote_manager:
+            return
+        try:
+            parsed = urllib.parse.urlparse(self.manager_url)
+            host = (parsed.hostname or "").lower()
+        except Exception:
+            host = ""
+        if host not in ("127.0.0.1", "localhost", "::1"):
+            raise config.error(
+                "magneto_linear_motor: manager_url host must be localhost "
+                "(got %s). Set allow_remote_manager: True only if intentional."
+                % (self.manager_url,)
+            )
 
     def get_status(self, eventtime=None):
         return {
             "backend": self.backend,
             "enabled": self._enabled,
             "last_error": self._last_error,
+            "serial_port": self._last_port,
         }
 
     def _http_get(self, path, query=None):
         q = ("?" + urllib.parse.urlencode(query)) if query else ""
         url = "%s%s%s" % (self.manager_url, path, q)
         try:
-            with urllib.request.urlopen(url, timeout=self.timeout) as resp:
+            req = urllib.request.Request(url, method="GET")
+            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
                 body = resp.read().decode("utf-8", errors="replace")
-                return resp.status, body
+                return resp.getcode(), body
         except urllib.error.HTTPError as e:
             body = e.read().decode("utf-8", errors="replace")
             return e.code, body
@@ -115,7 +147,8 @@ class MagnetoLinearMotor:
             import serial.tools.list_ports
         except ImportError:
             raise self.printer.command_error(
-                "magneto_linear_motor serial backend needs pyserial"
+                "magneto_linear_motor serial backend needs pyserial "
+                "(install in klippy-env)"
             )
         port = self.serial_port
         if not port:
@@ -125,11 +158,13 @@ class MagnetoLinearMotor:
                     break
         if not port:
             raise self.printer.command_error(
-                "magneto_linear_motor: no serial port "
+                "magneto_linear_motor: no serial port matching %r "
                 "(set serial_port= or plug ESP32 CH340)"
+                % (self.serial_match,)
             )
         try:
             self._ser = serial.Serial(port, self.baud, timeout=self.timeout)
+            self._last_port = port
         except Exception as e:
             raise self.printer.command_error(
                 "magneto_linear_motor open %s failed: %s" % (port, e)
@@ -137,20 +172,15 @@ class MagnetoLinearMotor:
         return self._ser
 
     def _serial_send(self, cmd):
-        cmd = cmd.strip().upper()
-        if cmd not in ALLOWED_SERIAL_CMDS:
-            raise self.printer.command_error(
-                "magneto_linear_motor: command not allowed"
-            )
         ser = self._open_serial()
         try:
-            ser.reset_input_buffer()
+            if hasattr(ser, "reset_input_buffer"):
+                ser.reset_input_buffer()
             ser.write((cmd + "\n").encode("ascii"))
             ser.flush()
-            # optional short read for VERSION
             if cmd == "VERSION":
                 line = ser.readline().decode("utf-8", errors="replace").strip()
-                return line
+                return line or "(empty VERSION response)"
         except Exception as e:
             try:
                 ser.close()
@@ -163,10 +193,10 @@ class MagnetoLinearMotor:
         return None
 
     def _send(self, cmd):
-        cmd = cmd.strip().upper()
-        if cmd not in ALLOWED_SERIAL_CMDS:
+        cmd = (cmd or "").strip().upper()
+        if cmd not in ALLOWED_CMDS:
             raise self.printer.command_error(
-                "magneto_linear_motor: command not allowed"
+                "magneto_linear_motor: command not allowed (%s)" % (cmd,)
             )
         self._last_error = None
         if self.backend == "http":
@@ -178,49 +208,63 @@ class MagnetoLinearMotor:
                         "manager version HTTP %s: %s" % (status, body)
                     )
                 return body
-            status, body = self._http_get(
-                "/send_command", {"command": cmd}
-            )
+            status, body = self._http_get("/send_command", {"command": cmd})
             if status != 200:
                 self._last_error = body
                 raise self.printer.command_error(
                     "manager HTTP %s: %s" % (status, body)
                 )
+            # Surface JSON error field if present even on 200
+            try:
+                data = json.loads(body)
+                if isinstance(data, dict) and data.get("error"):
+                    self._last_error = data["error"]
+                    raise self.printer.command_error(
+                        "manager error: %s" % (data["error"],)
+                    )
+            except (ValueError, TypeError):
+                pass
             return body
-        # serial
         return self._serial_send(cmd)
 
-    cmd_ENABLE_help = "Enable MagXY linear motors (ENABLE to ESP32)"
+    cmd_ENABLE_help = "Enable MagXY linear motors (ENABLE)"
 
     def cmd_ENABLE(self, gcmd):
         if self.enable_dwell > 0.0:
             self.printer.lookup_object("toolhead").dwell(self.enable_dwell)
         self._send("ENABLE")
         self._enabled = True
-        gcmd.respond_info("MagXY ENABLE sent (%s)" % (self.backend,))
+        gcmd.respond_info("MagXY ENABLE sent (backend=%s)" % (self.backend,))
 
-    cmd_DISABLE_help = "Disable MagXY linear motors (DISABLE to ESP32)"
+    cmd_DISABLE_help = "Disable MagXY linear motors (DISABLE)"
 
     def cmd_DISABLE(self, gcmd):
         self._send("DISABLE")
         self._enabled = False
-        gcmd.respond_info("MagXY DISABLE sent (%s)" % (self.backend,))
+        gcmd.respond_info("MagXY DISABLE sent (backend=%s)" % (self.backend,))
 
-    cmd_STATUS_help = "Report MagXY module backend and last known enable state"
+    cmd_STATUS_help = "Report MagXY backend and last known enable state"
 
     def cmd_STATUS(self, gcmd):
         gcmd.respond_info(
-            "magneto_linear_motor backend=%s enabled=%s last_error=%s"
-            % (self.backend, self._enabled, self._last_error)
+            "magneto_linear_motor backend=%s enabled=%s port=%s last_error=%s"
+            % (
+                self.backend,
+                self._enabled,
+                self._last_port,
+                self._last_error,
+            )
         )
         if self.backend == "http":
             try:
                 status, body = self._http_get("/health")
-                gcmd.respond_info("manager health HTTP %s: %s" % (status, body))
+                gcmd.respond_info(
+                    "manager health HTTP %s: %s" % (status, body)
+                )
             except Exception as e:
                 gcmd.respond_info("manager health failed: %s" % (e,))
 
-    cmd_VERSION_help = "Query manager or ESP32 version string"
+    cmd_VERSION_help = "Query manager OS version or ESP32 VERSION string"
 
     def cmd_VERSION(self, gcmd):
         body = self._send("VERSION")
