@@ -51,9 +51,19 @@ Under **Enable extra low-level configuration options**, enable:
 
 Only for the **Octopus** MagXY step/dir outputs.
 
-### Homing behavior
+### Homing behavior (D7)
 
-If `[magneto_load_cell]` is loaded, a “Probe triggered prior to movement” condition logs a warning instead of aborting. Prefer clearing the latch (`CLEAR_LOAD_CELL`) before Z home.
+If `[magneto_load_cell]` is loaded and the probe is already triggered before the move:
+
+1. Clear the load-cell latch (`clear_load_cell` / dwell)
+2. Retry the probe move **once**
+3. If still sticky → hard error
+
+Prefer clearing the latch (`CLEAR_LOAD_CELL` / `LC28`) before Z home. `CLEAR_LOAD_CELL` **dwells** for the full pulse window (PR-K2).
+
+### Shell PARAMS (PR-K5)
+
+`[gcode_shell_command]` rejects non-empty `PARAMS` by default (`allow_params: False`). MagXY curls must be fixed command lines only.
 
 ## Recommended MCU configs
 

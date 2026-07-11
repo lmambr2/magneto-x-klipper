@@ -51,8 +51,6 @@ class MagnetoLoadCell:
             for es, name in rail.get_endstops():
                 if name == 'probe':
                     self.clear_load_cell()
-                    toolhead = self.printer.lookup_object('toolhead')
-                    toolhead.dwell(self.pulse_time + 0.15)
                     return
 
     def _set_pin(self, value, delay=0.1):
@@ -64,9 +62,16 @@ class MagnetoLoadCell:
         return print_time
 
     def clear_load_cell(self):
-        """Pulse the reset line low, then return high."""
+        """Pulse the reset line low, then high, and dwell until complete.
+
+        PR-K2: callers must not rely on an external G4 — the toolhead dwells
+        for the full pulse window so the next probe sees a cleared latch.
+        """
         self._set_pin(0, delay=0.1)
         self._set_pin(1, delay=0.1 + self.pulse_time)
+        toolhead = self.printer.lookup_object('toolhead')
+        # Cover schedule offset (0.1) + pulse + small settle margin
+        toolhead.dwell(self.pulse_time + 0.25)
 
     cmd_LC28_help = "Clear / reset the Magneto X load-cell latch"
     def cmd_LC28(self, gcmd):

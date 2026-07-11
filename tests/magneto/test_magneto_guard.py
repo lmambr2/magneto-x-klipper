@@ -105,19 +105,30 @@ class TestMagnetoLoadCellLogic(unittest.TestCase):
         spec.loader.exec_module(mod)
 
         calls = []
+        dwells = []
+
+        class FakeToolhead:
+            def dwell(self, t):
+                dwells.append(t)
+
+        class FakePrinter:
+            def lookup_object(self, name):
+                return FakeToolhead()
 
         class Fake:
             pulse_time = 0.4
+            printer = FakePrinter()
 
             def _set_pin(self, value, delay=0.1):
                 calls.append((value, delay))
 
-        # Bind real clear_load_cell to fake instance
         mod.MagnetoLoadCell.clear_load_cell(Fake())
         self.assertEqual(calls[0][0], 0)
         self.assertEqual(calls[1][0], 1)
         self.assertGreater(calls[1][1], calls[0][1])
         self.assertAlmostEqual(calls[1][1], 0.1 + 0.4)
+        self.assertEqual(len(dwells), 1)
+        self.assertGreaterEqual(dwells[0], 0.4)
 
     def test_module_exports_load_config(self):
         path = REPO / "klippy/extras/magneto_load_cell.py"
@@ -134,6 +145,8 @@ class TestGcodeShellCommandSurface(unittest.TestCase):
         self.assertIn("RUN_SHELL_COMMAND", text)
         self.assertIn("def load_config_prefix", text)
         self.assertIn("class ShellCommand", text)
+        self.assertIn("allow_params", text)
+        self.assertIn("PARAMS not allowed", text)
 
 
 if __name__ == "__main__":

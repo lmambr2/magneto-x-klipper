@@ -332,19 +332,29 @@ class PrinterHoming:
             raise
         if check_movement and hmove.check_no_movement() is not None:
             # MAGNETO-X-BEGIN sticky-probe soft-fail
-            # Magneto X: stock load-cell front-end can remain latched high
-            # until CLEAR_LOAD_CELL / LC28 is issued. Prefer clearing the
-            # latch before probing; if the module is present, log instead of
-            # hard-failing so a single sticky sample does not abort Z home.
+            # Magneto X D7: stock load-cell latch can stay high until cleared.
+            # clear → dwell → one probe retry → hard fail if still sticky.
             # (Do not remove this block when merging upstream Klipper.)
-            if self.printer.lookup_object('magneto_load_cell', None) is not None:
-                self.gcode.respond_info(
-                    "Probe triggered prior to movement "
-                    "(magneto_load_cell present — clear with LC28 / "
-                    "CLEAR_LOAD_CELL before probing)")
-            else:
+            load_cell = self.printer.lookup_object('magneto_load_cell', None)
+            if load_cell is None:
                 raise self.printer.command_error(
                     "Probe triggered prior to movement")
+            load_cell.clear_load_cell()
+            # Fresh HomingMove for the single retry (D7)
+            hmove = HomingMove(self.printer, endstops)
+            try:
+                epos = hmove.homing_move(pos, speed, probe_pos=True)
+            except self.printer.command_error:
+                if self.printer.is_shutdown():
+                    raise self.printer.command_error(
+                        "Probing failed due to printer shutdown")
+                raise
+            if hmove.check_no_movement() is not None:
+                raise self.printer.command_error(
+                    "Probe triggered prior to movement "
+                    "(after load-cell clear retry)")
+            self.gcode.respond_info(
+                "Probe was sticky; cleared load cell and retried once")
             # MAGNETO-X-END sticky-probe soft-fail
         return epos
     def cmd_G28(self, gcmd):

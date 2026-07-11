@@ -7,6 +7,9 @@
 #
 # NOTE: Intentionally not in upstream Klipper (security). Required on Magneto X
 # for LM_ENABLE / LM_DISABLE which call the magneto-manager HTTP API.
+#
+# PR-K5: PARAMS are rejected by default (allow_params: False) so malicious
+# gcode cannot append argv to curl/shell. Deploy only fixed allowlisted cmds.
 import logging
 import os
 import shlex
@@ -22,6 +25,9 @@ class ShellCommand:
         self.command = shlex.split(cmd)
         self.timeout = config.getfloat('timeout', 2., above=0.)
         self.verbose = config.getboolean('verbose', True)
+        # Magneto default: no PARAMS (security). Set allow_params: True only
+        # for trusted, non-production experiments.
+        self.allow_params = config.getboolean('allow_params', False)
         self.proc_fd = None
         self.partial_output = ""
         self.gcode.register_mux_command(
@@ -50,7 +56,16 @@ class ShellCommand:
 
     cmd_RUN_SHELL_COMMAND_help = "Run a linux shell command"
     def cmd_RUN_SHELL_COMMAND(self, gcmd):
-        gcode_params = shlex.split(gcmd.get('PARAMS', ''))
+        raw_params = gcmd.get('PARAMS', None)
+        if raw_params not in (None, ''):
+            if not self.allow_params:
+                raise gcmd.error(
+                    "PARAMS not allowed for shell command {%s} "
+                    "(set allow_params: True only if you trust all gcode)"
+                    % (self.name,))
+            gcode_params = shlex.split(raw_params)
+        else:
+            gcode_params = []
         reactor = self.printer.get_reactor()
         hdl = None
         try:
