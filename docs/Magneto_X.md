@@ -89,3 +89,7 @@ python3 -m unittest discover -s tests/magneto -v
 ```
 
 See [UPSTREAM_SYNC.md](UPSTREAM_SYNC.md) for the merge/rebase procedure.
+
+### `[magneto_linear_motor]` (PR-K7)
+
+See mainline Magneto_X.md — backend http/serial, ENABLE/DISABLE only.
