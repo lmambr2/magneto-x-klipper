@@ -3,6 +3,9 @@
 Magneto-specific work lives on branch **`magneto-x`**. Upstream Klipper is
 tracked as `master` (or remote `upstream/master`).
 
+For the Kalico A/B track, use branch **`magneto-x-kalico`** and that branch’s
+`docs/UPSTREAM_SYNC.md` (remote `kalico`). Overview: [TRACKS.md](TRACKS.md).
+
 ## What survives a merge automatically?
 
 | Kind | Paths | Risk |

@@ -1,10 +1,11 @@
 # Magneto X support in this Klipper tree
 
-Repo: **magneto-x-klipper** (branch **`magneto-x`**).  
+Repo: **magneto-x-klipper** (branch **`magneto-x`**, mainline/default).  
+Sibling track: branch **`magneto-x-kalico`** (Kalico base) — see [TRACKS.md](TRACKS.md).  
 Umbrella project: [magneto-x](https://github.com/lmambr2/magneto-x) (configs, host OS, research).
 
 This tree is a **community/personal fork** for the Peopoly Magneto X.  
-**Do not submit these changes to upstream Klipper3d.**
+**Do not submit these changes to upstream Klipper3d or KalicoCrew/kalico.**
 
 ## Peopoly base
 
@@ -33,7 +34,7 @@ This is **not** the same as upstream `[load_cell]` / `[load_cell_probe]` (those 
 
 ### `[gcode_shell_command]`
 
-Arksine’s shell helper (not upstream). Required for MagXY:
+Arksine’s shell helper (**vendored** on this mainline track; **native** on `magneto-x-kalico`). Required for MagXY:
 
 ```ini
 [gcode_shell_command LINEAR_MOTOR_ENABLE]
@@ -59,7 +60,7 @@ If `[magneto_load_cell]` is loaded, a “Probe triggered prior to movement” co
 | Board | Notes |
 |-------|-------|
 | Octopus Pro H723 USB | + `MAGNETO_RELAX_STEPPER_PAST` |
-| Lancer RP2040 CAN | 1 Mbit CAN, no stepper-past option needed |
+| Lancer RP2040 CAN | Stock Linux Hub CAN is **250000** (not 1 Mbit); no stepper-past option needed |
 
 ## External services
 

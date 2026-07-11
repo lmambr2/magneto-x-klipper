@@ -2,9 +2,9 @@ name: Magneto guard
 
 on:
   push:
-    branches: [magneto-x, master]
+    branches: [magneto-x, magneto-x-kalico, master, main]
   pull_request:
-    branches: [magneto-x, master]
+    branches: [magneto-x, magneto-x-kalico, master, main]
   workflow_dispatch:
 
 jobs:

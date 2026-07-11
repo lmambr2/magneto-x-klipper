@@ -2,12 +2,18 @@
 
 **Modern [Klipper](https://www.klipper3d.org/) for the Peopoly Magneto X** (MagXY + Lancer).
 
-This is a **community / personal fork**. Magneto-specific extras live on branch **`magneto-x`**.
+This is a **community / personal fork**. Magneto-specific extras live on:
 
-- Project umbrella (configs, host tooling, docs): [lmambr2/magneto-x](https://github.com/lmambr2/magneto-x)
+| Branch | Base | Role |
+|--------|------|------|
+| **`magneto-x`** (default) | Klipper3d | Recommended first |
+| **`magneto-x-kalico`** | [Kalico](https://github.com/KalicoCrew/kalico) | Optional A/B |
+
+- Project umbrella: [lmambr2/magneto-x](https://github.com/lmambr2/magneto-x)
+- Tracks / switching: [docs/TRACKS.md](docs/TRACKS.md)
 - In-tree notes: [docs/Magneto_X.md](docs/Magneto_X.md)
 - Upstream sync: [docs/UPSTREAM_SYNC.md](docs/UPSTREAM_SYNC.md) — run `python3 scripts/magneto_guard.py` after every merge
-- **Do not open PRs against [Klipper3d/klipper](https://github.com/Klipper3d/klipper) for Magneto patches.**
+- **Do not open PRs against Klipper3d or KalicoCrew for Magneto patches.**
 
 Not affiliated with Peopoly. Stock Peopoly Klipper is based on a 2023-05-25 (v0.11-era) tree; this fork tracks current Klipper and re-applies only the minimum Magneto hardware support.
 
