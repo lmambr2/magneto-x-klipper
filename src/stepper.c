@@ -104,8 +104,14 @@ stepper_load_next(struct stepper *s)
         if (was_active && timer_is_before(s->next_step_time, min_next_time)) {
             // Actively stepping and next step event close to the last unstep
             int32_t diff = s->next_step_time - min_next_time;
+            // Magneto X: Peopoly disabled this shutdown for MagXY linear
+            // motors (very short step pulses + closed-loop ESP32 bridge).
+            // Define CONFIG_MAGNETO_RELAX_STEPPER_PAST=1 in the MCU build
+            // (see docs/Magneto_X.md) when flashing Octopus firmware.
+#if !CONFIG_MAGNETO_RELAX_STEPPER_PAST
             if (diff < (int32_t)-timer_from_us(1000))
                 shutdown("Stepper too far in past");
+#endif
             s->time.waketime = min_next_time;
         }
         if (was_active && need_dir_change) {

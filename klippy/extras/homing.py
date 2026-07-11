@@ -302,8 +302,8 @@ class PrinterHoming:
     def __init__(self, config):
         self.printer = config.get_printer()
         # Register g-code commands
-        gcode = self.printer.lookup_object('gcode')
-        gcode.register_command('G28', self.cmd_G28)
+        self.gcode = self.printer.lookup_object('gcode')
+        self.gcode.register_command('G28', self.cmd_G28)
     def manual_home(self, toolhead, endstops, pos, speed,
                     probe_pos, triggered, check_triggered):
         hmove = HomingMove(self.printer, endstops, toolhead)
@@ -331,8 +331,18 @@ class PrinterHoming:
                     "Probing failed due to printer shutdown")
             raise
         if check_movement and hmove.check_no_movement() is not None:
-            raise self.printer.command_error(
-                "Probe triggered prior to movement")
+            # Magneto X: stock load-cell front-end can remain latched high
+            # until CLEAR_LOAD_CELL / LC28 is issued. Prefer clearing the
+            # latch before probing; if the module is present, log instead of
+            # hard-failing so a single sticky sample does not abort Z home.
+            if self.printer.lookup_object('magneto_load_cell', None) is not None:
+                self.gcode.respond_info(
+                    "Probe triggered prior to movement "
+                    "(magneto_load_cell present — clear with LC28 / "
+                    "CLEAR_LOAD_CELL before probing)")
+            else:
+                raise self.printer.command_error(
+                    "Probe triggered prior to movement")
         return epos
     def cmd_G28(self, gcmd):
         # Move to origin

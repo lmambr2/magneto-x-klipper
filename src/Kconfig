@@ -313,6 +313,18 @@ config WANT_STEPPER_OPTIMIZED_BOTH_EDGE
         take a step only on the "rising" or "falling" level of the
         step pin).
 
+# Magneto X / MagXY linear-motor compatibility (vendor fork feature)
+config MAGNETO_RELAX_STEPPER_PAST
+    bool "Magneto X: relax 'Stepper too far in past' shutdown"
+    depends on LOW_LEVEL_OPTIONS
+    default n
+    help
+        Peopoly's MagXY linear motors are driven through an ESP32 bridge
+        with very short step pulse widths. The stock Klipper safeguard that
+        shuts down when a step is scheduled more than 1ms in the past can
+        trip spuriously on that hardware. Enable only on Magneto X Octopus
+        builds. See docs/Magneto_X.md.
+
 # Support setting gpio state at startup
 config INITIAL_PINS
     string "GPIO pins to set at micro-controller startup"
