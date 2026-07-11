@@ -67,6 +67,12 @@ Prefer clearing the latch (`CLEAR_LOAD_CELL` / `LC28`) before Z home. `CLEAR_LOA
 
 ## Recommended MCU configs
 
+Octopus: **STM32H723**, **128KiB bootloader**, **25 MHz crystal**, USB PA11/PA12.
+`MAGNETO_RELAX_STEPPER_PAST` default **n** until S3 A/B (do not enable by default).
+See umbrella `docs/MCU_BUILD.md` and `os/defconfig-*`.
+
+## Recommended MCU configs
+
 | Board | Notes |
 |-------|-------|
 | Octopus Pro H723 USB | + `MAGNETO_RELAX_STEPPER_PAST` |
