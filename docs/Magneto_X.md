@@ -1,15 +1,18 @@
 # Magneto X support in this Klipper tree
 
-This tree is a **personal fork** for the Peopoly Magneto X.  
+Repo: **magneto-x-klipper** (branch **`magneto-x`**).  
+Umbrella project: [magneto-x](https://github.com/lmambr2/magneto-x) (configs, host OS, research).
+
+This tree is a **community/personal fork** for the Peopoly Magneto X.  
 **Do not submit these changes to upstream Klipper3d.**
 
 ## Peopoly base
 
-Peopoly’s `magneto-x` branch was based on upstream commit:
+Peopoly’s repo `mypeopoly/Klipper`, branch `magneto-x`, was based on upstream commit:
 
 `5f0d252b408ef0cd182367ba4cc224b8d105f0ec` (2023-05-25, Klipper v0.11 era).
 
-Their public `master` is a history-less squash; use `magneto-x` for archaeology.
+Their public `master` is a history-less squash; use their `magneto-x` branch for archaeology only.
 
 ## Modules unique to this fork
 
