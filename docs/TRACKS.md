@@ -79,9 +79,15 @@ Flash MCUs once per tree; label the `.bin` files.
 | Track | Fetch remote | Merge into |
 |-------|--------------|------------|
 | `magneto-x` | `upstream` = Klipper3d | `magneto-x` |
-| `magneto-x-kalico` | `kalico` = KalicoCrew/kalico | `magneto-x-kalico` |
+| `magneto-x-kalico` | `kalico` = KalicoCrew/kalico | maintainer **devel** history, then re-export tip |
 
 Do **not** merge the two Magneto branches into each other as a routine — they share *intent* (MANIFEST + markers), not a linear history after the bases diverge.
+
+### Note on published `magneto-x-kalico` history
+
+GitHub OAuth without the `workflow` scope cannot push branches that introduce Kalico’s `.github/workflows/*` files. The **published** `origin/magneto-x-kalico` tip is therefore a **full-tree snapshot** (orphan root commit) of Kalico + Magneto extras, without Actions workflows. That is fine for clones, Moonraker updates, and A/B testing.
+
+Maintainers who need linear Kalico history for merges keep a local branch (e.g. `magneto-x-kalico-devel` tracking `kalico/main` + Magneto commits), then re-export a fresh snapshot when publishing.
 
 After every upstream pull on either track:
 
