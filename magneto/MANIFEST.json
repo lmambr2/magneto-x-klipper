@@ -19,8 +19,18 @@
       ]
     },
     {
+      "path": "klippy/extras/magneto_linear_motor.py",
+      "role": "Native MagXY ENABLE/DISABLE (PR-K7); http or serial backend",
+      "must_contain": [
+        "class MagnetoLinearMotor",
+        "MAGNETO_LINEAR_ENABLE",
+        "ALLOWED_SERIAL_CMDS",
+        "load_config"
+      ]
+    },
+    {
       "path": "klippy/extras/gcode_shell_command.py",
-      "role": "RUN_SHELL_COMMAND for MagXY ENABLE/DISABLE via magneto-manager",
+      "role": "RUN_SHELL_COMMAND (optional; MagXY prefers magneto_linear_motor)",
       "must_contain": [
         "class ShellCommand",
         "RUN_SHELL_COMMAND",
@@ -32,18 +42,25 @@
       "role": "in-tree Magneto documentation",
       "must_contain": [
         "magneto_load_cell",
-        "MAGNETO_RELAX_STEPPER_PAST"
+        "MAGNETO_RELAX_STEPPER_PAST",
+        "magneto_linear_motor"
       ]
     },
     {
       "path": "magneto/MANIFEST.json",
       "role": "this manifest",
-      "must_contain": ["owned_files", "patched_files"]
+      "must_contain": [
+        "owned_files",
+        "patched_files"
+      ]
     },
     {
       "path": "scripts/magneto_guard.py",
       "role": "CI/local guard for Magneto assets",
-      "must_contain": ["MAGNETO-X-BEGIN", "check_manifest"]
+      "must_contain": [
+        "MAGNETO-X-BEGIN",
+        "check_manifest"
+      ]
     }
   ],
   "patched_files": [

@@ -32,6 +32,33 @@ G-codes: `CLEAR_LOAD_CELL` / `LC28`, `LL28`, `LH28`.
 
 This is **not** the same as upstream `[load_cell]` / `[load_cell_probe]` (those need a direct ADC).
 
+
+### `[magneto_linear_motor]` (PR-K7)
+
+Native MagXY enable/disable — preferred over `gcode_shell_command` + curl.
+
+```ini
+[magneto_linear_motor]
+backend: http
+manager_url: http://127.0.0.1:8880
+# backend: serial
+# serial_port: /dev/ttyUSB0
+# baud: 115200
+register_lm_aliases: True
+```
+
+| G-code | Action |
+|--------|--------|
+| `MAGNETO_LINEAR_ENABLE` / `LM_ENABLE` | Send ENABLE |
+| `MAGNETO_LINEAR_DISABLE` / `LM_DISABLE` | Send DISABLE |
+| `MAGNETO_LINEAR_STATUS` | Backend + last state |
+| `MAGNETO_LINEAR_VERSION` | Manager `/get_os_version` or serial VERSION |
+
+**http** (default): talks to hardened magneto-manager (manager owns CH340).  
+**serial**: direct ESP32; stop magneto-manager first so the port is free.
+
+Only ENABLE/DISABLE/VERSION — no arbitrary serial from gcode.
+
 ### `[gcode_shell_command]`
 
 Arksine’s shell helper (**vendored** on this mainline track; **native** on `magneto-x-kalico`). Required for MagXY:
