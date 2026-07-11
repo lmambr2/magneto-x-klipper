@@ -1,0 +1,33 @@
+name: Magneto guard
+
+on:
+  push:
+    branches: [magneto-x, magneto-x-kalico, master, main]
+  pull_request:
+    branches: [magneto-x, magneto-x-kalico, master, main]
+  workflow_dispatch:
+
+jobs:
+  magneto-assets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Magneto asset guard
+        run: python3 scripts/magneto_guard.py
+
+      - name: Magneto unit tests
+        run: python3 -m unittest discover -s tests/magneto -v
+
+      - name: Fail if required extras missing (belt-and-suspenders)
+        run: |
+          test -f klippy/extras/magneto_load_cell.py
+          test -f klippy/extras/gcode_shell_command.py
+          grep -q 'MAGNETO-X-BEGIN sticky-probe soft-fail' klippy/extras/homing.py
+          grep -q 'MAGNETO_RELAX_STEPPER_PAST' src/Kconfig
+          grep -q 'CONFIG_MAGNETO_RELAX_STEPPER_PAST' src/stepper.c
