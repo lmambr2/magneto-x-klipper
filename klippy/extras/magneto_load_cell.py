@@ -27,7 +27,8 @@ class MagnetoLoadCell:
             'digital_out', self.reset_pin_name)
         self.load_cell_reset_pin.setup_max_duration(0.)
         # Idle high; pulse low to clear the latch on the load-cell MCU.
-        self.load_cell_reset_pin.setup_start_value(1, 1, False)
+        # MCU digital_out API is (start_value, shutdown_value) only.
+        self.load_cell_reset_pin.setup_start_value(1, 1)
         self.pulse_time = config.getfloat(
             'pulse_time', 0.4, minval=0.05, maxval=2.0)
         self.gcode.register_command(
