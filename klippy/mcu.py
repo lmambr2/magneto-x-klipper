@@ -420,9 +420,12 @@ class MCU_digital_out:
         return self._mcu
     def setup_max_duration(self, max_duration):
         self._max_duration = max_duration
-    def setup_start_value(self, start_value, shutdown_value):
+    def setup_start_value(self, start_value, shutdown_value, is_static=False):
+        # is_static kept optional for peopoly-era callers (3rd positional arg).
+        # Mainline removed static digital_out from this path; ignore the flag.
         self._start_value = (not not start_value) ^ self._invert
         self._shutdown_value = (not not shutdown_value) ^ self._invert
+        self._is_static = not not is_static
     def _build_config(self):
         if self._max_duration and self._start_value != self._shutdown_value:
             raise pins.error("Pin with max duration must have start"
@@ -430,6 +433,12 @@ class MCU_digital_out:
         mdur_ticks = self._mcu.seconds_to_clock(self._max_duration)
         if mdur_ticks > MAX_SCHEDULE_TICKS:
             raise pins.error("Digital pin max duration too large")
+        # Static pins: configure once without a move-queue oid (peopoly / old API)
+        if getattr(self, '_is_static', False):
+            self._mcu.add_config_cmd(
+                "set_digital_out pin=%s value=%d"
+                % (self._pin, self._start_value))
+            return
         self._mcu.request_move_queue_slot()
         self._oid = self._mcu.create_oid()
         self._mcu.add_config_cmd(
@@ -470,13 +479,15 @@ class MCU_pwm:
     def setup_cycle_time(self, cycle_time, hardware_pwm=False):
         self._cycle_time = cycle_time
         self._hardware_pwm = hardware_pwm
-    def setup_start_value(self, start_value, shutdown_value):
+    def setup_start_value(self, start_value, shutdown_value, is_static=False):
+        # is_static optional for peopoly-era 3-arg callers; static PWM unused.
         if self._invert:
             start_value = 1. - start_value
             shutdown_value = 1. - shutdown_value
         self._start_value = max(0., min(1., start_value))
         self._shutdown_value = max(0., min(1., shutdown_value))
         self._last_value = self._start_value
+        self._is_static = not not is_static
     def _build_config(self):
         if self._max_duration and self._start_value != self._shutdown_value:
             raise pins.error("Pin with max duration must have start"

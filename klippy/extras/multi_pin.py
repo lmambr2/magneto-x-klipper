@@ -37,9 +37,9 @@ class PrinterMultiPin:
     def setup_max_duration(self, max_duration):
         for mcu_pin in self.mcu_pins:
             mcu_pin.setup_max_duration(max_duration)
-    def setup_start_value(self, start_value, shutdown_value):
+    def setup_start_value(self, start_value, shutdown_value, is_static=False):
         for mcu_pin in self.mcu_pins:
-            mcu_pin.setup_start_value(start_value, shutdown_value)
+            mcu_pin.setup_start_value(start_value, shutdown_value, is_static)
     def setup_cycle_time(self, cycle_time, hardware_pwm=False):
         for mcu_pin in self.mcu_pins:
             mcu_pin.setup_cycle_time(cycle_time, hardware_pwm)
