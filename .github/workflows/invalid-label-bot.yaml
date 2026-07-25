@@ -3,6 +3,11 @@ name: "Add comment to issues marked 'not on github'"
 on:
   issues:
       types: [labeled]
+
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   comment:
     if: github.repository == 'Klipper3d/klipper'

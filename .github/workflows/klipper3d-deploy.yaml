@@ -8,6 +8,11 @@ on:
     paths:
       - docs/**
       - .github/workflows/klipper3d-deploy.yaml
+
+# Upstream docs deploy; contents:write only for gh-pages publish action.
+permissions:
+  contents: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest

@@ -45,11 +45,7 @@ get_chip_fd(uint8_t chipId)
         return gpio_chip_fd[chipId];
     char chipFilename[64];
     snprintf(chipFilename, sizeof(chipFilename), "/dev/gpiochip%u", chipId);
-    int ret = access(chipFilename, F_OK);
-    if (ret < 0) {
-        report_errno("gpio access", ret);
-        shutdown("GPIO chip device not found");
-    }
+    /* Open directly (no access()+open TOCTOU). open() fails if missing. */
     int fd = open(chipFilename, O_RDWR | O_CLOEXEC);
     if (fd < 0) {
         report_errno("gpio open", fd);

@@ -3,6 +3,11 @@ name: "Add comment to PRs marked 'reviewer needed'"
 on:
   pull_request_target:
       types: [labeled]
+
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   add_comment:
     if: github.repository == 'Klipper3d/klipper'

@@ -3,6 +3,12 @@ name: "Close stale tickets"
 on:
   schedule:
     - cron: '0 */12 * * *'
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
 jobs:
   # Check for stale issues (no updates in 5 weeks)
   stale:
